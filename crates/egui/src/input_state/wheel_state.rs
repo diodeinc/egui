@@ -132,15 +132,14 @@ impl WheelState {
                     delta = vec2(0.0, delta.x + delta.y);
                 }
 
-                // Mouse wheels often go very large steps.
-                // A single notch on a logitech mouse wheel connected to a Macbook returns 14.0 raw scroll delta.
-                // So we smooth it out over several frames for a nicer user experience when scrolling in egui.
-                // BUT: if the user is using a nice smooth mac trackpad, we don't add smoothing,
-                // because it adds latency.
+                // Determine if input is already smooth based on the event unit:
+                // - Point (DOM_DELTA_PIXEL): Trackpad/touchpad - already provides smooth, high-frequency deltas
+                // - Line (DOM_DELTA_LINE): Mouse wheel notches - discrete, needs smoothing
+                // - Page (DOM_DELTA_PAGE): Page scroll - discrete, needs smoothing
                 let is_smooth = self.status == Status::InTouch
                     || match unit {
-                        MouseWheelUnit::Point => delta.length() < 8.0, // a bit arbitrary here
-                        MouseWheelUnit::Line | MouseWheelUnit::Page => false,
+                        MouseWheelUnit::Point => true,  // Trackpad = already smooth, pass through directly
+                        MouseWheelUnit::Line | MouseWheelUnit::Page => false, // Mouse wheel = needs smoothing
                     };
 
                 if is_smooth {
